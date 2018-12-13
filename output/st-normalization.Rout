@@ -1,0 +1,287 @@
+
+R version 3.4.4 (2018-03-15) -- "Someone to Lean On"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> 
+> # attemps to generate root Folder from working directory, supposing you downloaded the three main folders as given.
+> # will not work if WD =/= folder with this script. In that case, replace base.dir with root folder containing the three 
+> # main folders (i.e. input, output and R)
+> 
+> # base.dir <- gsub("/R","",getwd()) 
+> # setwd("../")
+> 
+> base.dir <- '.' 
+> code.dir <- paste0(base.dir, "/R")
+> input.dir <- paste0(base.dir, "/input")
+> output.dir <- paste0(base.dir, "/output")
+> figures.dir <- output.dir #paste0(output.dir, "/figures")
+> 
+> 
+> # Loads necessary packages
+> # This piece of code will try to load the packages names in the pkgVector object
+> # If necessary, it tries downloading and installing the packages using either install.packages or biocLite from
+> # bioconductor
+> 
+> pkgVector= c("magick", "plotrix", "MASS")
+> 
+> if(!all(lapply(pkgVector, require, character.only= T ))){
++   notLoaded = which(lapply(pkgVector, require, character.only= T ) == FALSE)
++   install.packages(pkgVector[notLoaded]);
++   source("https://bioconductor.org/biocLite.R")
++   notLoaded = which(lapply(pkgVector, require, character.only= T ) == FALSE)
++   biocLite(pkgVector[notLoaded], ask = F) # will not prompt ask to update packages
++   lapply(pkgVector, require, character.only= T )
++ } else{
++   lapply(pkgVector, require, character.only= T )
++ }
+Loading required package: magick
+Linking to ImageMagick 7.0.7.30
+Enabled features: fontconfig, freetype, lcms, x11
+Disabled features: cairo, fftw, ghostscript, pango, rsvg, webp
+Loading required package: plotrix
+Loading required package: MASS
+[[1]]
+[1] TRUE
+
+[[2]]
+[1] TRUE
+
+[[3]]
+[1] TRUE
+
+Warning message:
+In all(lapply(pkgVector, require, character.only = T)) :
+  coercing argument of type 'list' to logical
+> 
+> source(paste0(code.dir, "/utils.R"))
+> 
+> 
+> ##Load ST data object, list that contains all necessary data
+> load(paste0(input.dir, '/st-slice.Rda'))
+> 
+> ##Plot regions
+> plotColorOnSlide(stSlice, stSlice$regionColorsVector, title='Regions', file=paste0(figures.dir, '/slice-regions.pdf'))
+null device 
+          1 
+> 
+> 
+> ##Cell numbers
+> cellNumbers <- cbind(Total=apply(stSlice$segmentation[, c('cancer_cells', 'fibroblasts', 'other_cells')], 1, sum),
++                      Epithelial=stSlice$segmentation[, 'cancer_cells'],
++                      Fibroblasts=stSlice$segmentation[, 'fibroblasts'],
++                      Others=stSlice$segmentation[, 'other_cells'])
+> summary(cellNumbers)
+     Total          Epithelial      Fibroblasts        Others       
+ Min.   :  0.00   Min.   :  0.00   Min.   : 0.00   Min.   :  0.000  
+ 1st Qu.: 42.00   1st Qu.: 14.00   1st Qu.:12.00   1st Qu.:  1.000  
+ Median : 67.00   Median : 36.00   Median :21.00   Median :  2.000  
+ Mean   : 67.69   Mean   : 39.96   Mean   :21.91   Mean   :  5.819  
+ 3rd Qu.: 91.00   3rd Qu.: 62.00   3rd Qu.:30.00   3rd Qu.:  6.000  
+ Max.   :197.00   Max.   :133.00   Max.   :61.00   Max.   :114.000  
+> apply(cellNumbers, 2, sum)
+      Total  Epithelial Fibroblasts      Others 
+      19022       11230        6157        1635 
+> 
+> 
+> 
+> ##Total count
+> totalCounts <- 2**stSlice$rawCounts-1
+> totalCounts[totalCounts<1] <- 0
+> totalCounts <- colSums(totalCounts)
+> summary(totalCounts)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    356    1175    2382    2661    3745    8749 
+> 
+> plotScalarOnSlide(stSlice, log2(totalCounts), title='Total Counts', legendTitle='Log2(counts)',
++                   file=paste0(figures.dir, '/slice-log2-total-counts.pdf'))
+null device 
+          1 
+> 
+> plotScatter(cellNumbers[, 'Epithelial'], log2(totalCounts), xlab='# epithelial cells', ylab='# reads [log2]', fit='lqs',
++             col=transparentRGB(stSlice$regionColorsVector, 85),
++             cor.x=0.7, cor.y=0.2, file=paste0(figures.dir, '/scatter-number-epithelial-cells-vs-number-reads.pdf')) 
+    rho.rho           p 
+      "0.7" "(p=3e-43)" 
+Warning message:
+In cor.test.default(x, y, method = "spearman") :
+  Cannot compute exact p-value with ties
+> 
+> 
+> fit <- lm(log2(totalCounts) ~ cellNumbers[, 'Epithelial'] + cellNumbers[, 'Fibroblasts'] + cellNumbers[, 'Others'])
+> summary(fit)
+
+Call:
+lm(formula = log2(totalCounts) ~ cellNumbers[, "Epithelial"] + 
+    cellNumbers[, "Fibroblasts"] + cellNumbers[, "Others"])
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-2.16497 -0.53660 -0.02018  0.58397  1.73392 
+
+Coefficients:
+                              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)                   9.691427   0.125790  77.044  < 2e-16 ***
+cellNumbers[, "Epithelial"]   0.027155   0.001729  15.708  < 2e-16 ***
+cellNumbers[, "Fibroblasts"]  0.013467   0.003893   3.459 0.000628 ***
+cellNumbers[, "Others"]      -0.009879   0.004105  -2.407 0.016755 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.788 on 277 degrees of freedom
+Multiple R-squared:  0.482,	Adjusted R-squared:  0.4764 
+F-statistic: 85.93 on 3 and 277 DF,  p-value: < 2.2e-16
+
+> summary(fit)$coef
+                                Estimate  Std. Error   t value      Pr(>|t|)
+(Intercept)                   9.69142666 0.125790079 77.044444 4.007172e-189
+cellNumbers[, "Epithelial"]   0.02715477 0.001728746 15.707786  3.377243e-40
+cellNumbers[, "Fibroblasts"]  0.01346716 0.003893387  3.458984  6.275817e-04
+cellNumbers[, "Others"]      -0.00987856 0.004104727 -2.406630  1.675527e-02
+> 
+> 
+> ##Counts adjustment
+> totalCountsLog2 <- log2(totalCounts)
+> stSlice$adjCounts <- t(apply(stSlice$rawCounts, 1, function(z) {
++   lqs(z ~ totalCountsLog2)$residuals + mean(z)}))
+> rownames(stSlice$adjCounts) <- rownames(stSlice$rawCounts)
+> 
+> 
+> ##TG and VIM 
+> plotGenes(stSlice, 'TG', norm='rawCounts')
+null device 
+          1 
+> plotGenes(stSlice, 'TG', norm='adjCounts')
+null device 
+          1 
+> plotGenes(stSlice, 'TG', norm='dca')
+null device 
+          1 
+> 
+> plotGenes(stSlice, 'VIM', norm='rawCounts')
+null device 
+          1 
+> plotGenes(stSlice, 'VIM', norm='adjCounts')
+null device 
+          1 
+> plotGenes(stSlice, 'VIM', norm='dca')
+null device 
+          1 
+> 
+> 
+> plotScatter(cellNumbers[,'Epithelial'], cellNumbers[,'Fibroblasts'],
++             xlab='# epithelial cells', cor.x=0.75,
++             ylab='# fibroblasts', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
++             file=paste0(figures.dir, '/scatter-number-epithelial-vs-number-fibroblasts.pdf'))
+   rho.rho          p 
+   "-0.12" "(p=0.05)" 
+Warning message:
+In cor.test.default(x, y, method = "spearman") :
+  Cannot compute exact p-value with ties
+> 
+> plotScatter(100*cellNumbers[,'Epithelial']/cellNumbers[, 'Total'], 100*cellNumbers[,'Fibroblasts']/cellNumbers[, 'Total'],
++             xlab='% epithelial cells', cor.x=0.75,
++             ylab='% fibroblasts', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
++             file=paste0(figures.dir, '/scatter-percent-epithelial-vs-percent-fibroblasts.pdf'))
+     rho.rho            p 
+     "-0.92" "(p=2e-112)" 
+Warning message:
+In cor.test.default(x, y, method = "spearman") :
+  Cannot compute exact p-value with ties
+> 
+> 
+> plotScatter(stSlice$rawCounts['TG',], stSlice$rawCounts['VIM',],
++             xlab='TG expression [log2]',
++             ylab='VIM expression [log2]', fit='lqs',  col=transparentRGB(stSlice$regionColorsVector, 85),
++             file=paste0(figures.dir, '/scatter-TG-vs-VIM-rawCounts.pdf'))
+    rho.rho           p 
+     "0.48" "(p=2e-17)" 
+Warning message:
+In cor.test.default(x, y, method = "spearman") :
+  Cannot compute exact p-value with ties
+> plotScatter(stSlice$adjCounts['TG',], stSlice$adjCounts['VIM',],
++             xlab='TG expression [log2]', cor.x=0.75,
++             ylab='VIM expression [log2]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
++             file=paste0(figures.dir, '/scatter-TG-vs-VIM-adjCounts.pdf'))
+    rho.rho           p 
+     "-0.3" "(p=4e-07)" 
+Warning message:
+In cor.test.default(x, y, method = "spearman") :
+  Cannot compute exact p-value with ties
+> plotScatter(stSlice$dca['TG',], stSlice$dca['VIM',],
++             xlab='TG expression [log2]', cor.x=0.75,
++             ylab='VIM expression [log2]', fit='lqs',  col=transparentRGB(stSlice$regionColorsVector, 85),
++             file=paste0(figures.dir, '/scatter-TG-vs-VIM-dca.pdf'))
+    rho.rho           p 
+    "-0.72" "(p<2e-16)" 
+> 
+> 
+> ##Correlations
+> g <- sample(1:nrow(stSlice$rawCounts), 500)
+> c.raw <- sapply(g, function(i)
++   sapply(g, function(j)
++         if (i==j) {NA} else {cor(stSlice$rawCounts[i,], stSlice$rawCounts[j,], method='spearman')}))
+> 
+> c.adj <- sapply(g, function(i)
++   sapply(g, function(j)
++         if (i==j) {NA} else {cor(stSlice$adjCounts[i,], stSlice$adjCounts[j,], method='spearman')}))
+> 
+> c.dca <- sapply(g, function(i)
++   sapply(g, function(j)
++         if (i==j) {NA} else {cor(stSlice$dca[i,], stSlice$dca[j,], method='spearman')}))
+> 
+> d <- list(c.raw, c.adj, c.dca)
+> names(d) <- c('Raw counts', 'Adj. counts', 'DCA')
+> pdf(paste0(figures.dir, '/density-gene-gene-correlation.pdf'))
+> par(mar=c(6.1, 6.5, 4.1, 1.1))
+> plotDensities(d, xlab='Gene-gene correlation', main='', legend.pos='topleft')
+> dev.off()
+null device 
+          1 
+> 
+> 
+> ##Quit
+> sessionInfo()
+R version 3.4.4 (2018-03-15)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: CentOS Linux 7 (Core)
+
+Matrix products: default
+BLAS: /theia/scratch/projects/iribhm/software/opt/R/R-3.4.4/lib/libRblas.so
+LAPACK: /theia/scratch/projects/iribhm/software/opt/R/R-3.4.4/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] MASS_7.3-49 plotrix_3.7 magick_1.8 
+
+loaded via a namespace (and not attached):
+[1] compiler_3.4.4 magrittr_1.5   tools_3.4.4    Rcpp_0.12.16   knitr_1.20    
+> q(save='no')
+> proc.time()
+   user  system elapsed 
+607.313  85.060 694.175 
