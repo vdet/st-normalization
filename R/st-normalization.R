@@ -23,7 +23,7 @@ pkgVector= c("magick", "plotrix", "MASS")
 
 if(!all(lapply(pkgVector, require, character.only= T ))){
   notLoaded = which(lapply(pkgVector, require, character.only= T ) == FALSE)
-  install.packages(pkgVector[notLoaded]);
+  install.packages(pkgVector[notLoaded], repos = "http://cran.us.r-project.org");
   source("https://bioconductor.org/biocLite.R")
   notLoaded = which(lapply(pkgVector, require, character.only= T ) == FALSE)
   biocLite(pkgVector[notLoaded], ask = F) # will not prompt ask to update packages

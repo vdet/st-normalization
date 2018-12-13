@@ -1,0 +1,71 @@
+
+R version 3.4.4 (2018-03-15) -- "Someone to Lean On"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> 
+> # attemps to generate root Folder from working directory, supposing you downloaded the three main folders as given.
+> # will not work if WD =/= folder with this script. In that case, replace base.dir with root folder containing the three 
+> # main folders (i.e. input, output and R)
+> 
+> # base.dir <- gsub("/R","",getwd()) 
+> # setwd("../")
+> 
+> base.dir <- '.' 
+> code.dir <- paste0(base.dir, "/R")
+> input.dir <- paste0(base.dir, "/input")
+> output.dir <- paste0(base.dir, "/output")
+> figures.dir <- output.dir #paste0(output.dir, "/figures")
+> 
+> 
+> # Loads necessary packages
+> # This piece of code will try to load the packages names in the pkgVector object
+> # If necessary, it tries downloading and installing the packages using either install.packages or biocLite from
+> # bioconductor
+> 
+> pkgVector= c("magick", "plotrix", "MASS")
+> 
+> if(!all(lapply(pkgVector, require, character.only= T ))){
++   notLoaded = which(lapply(pkgVector, require, character.only= T ) == FALSE)
++   install.packages(pkgVector[notLoaded]);
++   source("https://bioconductor.org/biocLite.R")
++   notLoaded = which(lapply(pkgVector, require, character.only= T ) == FALSE)
++   biocLite(pkgVector[notLoaded], ask = F) # will not prompt ask to update packages
++   lapply(pkgVector, require, character.only= T )
++ } else{
++   lapply(pkgVector, require, character.only= T )
++ }
+Loading required package: magick
+Error: package or namespace load failed for ‘magick’ in dyn.load(file, DLLpath = DLLpath, ...):
+ unable to load shared object '/sulb3/joerodri/R/x86_64-pc-linux-gnu-library/3.4/magick/libs/magick.so':
+  libR.so: cannot open shared object file: No such file or directory
+Loading required package: plotrix
+Loading required package: MASS
+Loading required package: magick
+Error: package or namespace load failed for ‘magick’ in dyn.load(file, DLLpath = DLLpath, ...):
+ unable to load shared object '/sulb3/joerodri/R/x86_64-pc-linux-gnu-library/3.4/magick/libs/magick.so':
+  libR.so: cannot open shared object file: No such file or directory
+Installing package into ‘/sulb3/joerodri/R/x86_64-pc-linux-gnu-library/3.4’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> grep -> contrib.url
+In addition: Warning message:
+In all(lapply(pkgVector, require, character.only = T)) :
+  coercing argument of type 'list' to logical
+Execution halted
