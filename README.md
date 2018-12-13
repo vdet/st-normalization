@@ -4,10 +4,10 @@ To run the code in a *NIX environment:
 
 1- If necessary install R 3.4.4 or above.
 
-2- cd to the directory where this package was installed.
+2- cd to the directory where this package is installed.
 
 3- R CMD BATCH R/st-normalization.R
 
 
-Code takes a few minute to execute.
+Code takes a few minutes to execute.
 
