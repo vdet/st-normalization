@@ -39,7 +39,7 @@ source(paste0(code.dir, "/utils.R"))
 load(paste0(input.dir, '/st-slice.Rda'))
 
 ##Plot regions
-plotColorOnSlide(stSlice, stSlice$regionColorsVector, title='Regions', file=paste0(figures.dir, '/slice-regions.pdf'))
+plotColorOnSlide(stSlice, stSlice$regionColorsVector, title='Regions', file=paste0(figures.dir, '/slice-regions.jpg'))
 
 
 ##Cell numbers
@@ -59,7 +59,7 @@ totalCounts <- colSums(totalCounts)
 summary(totalCounts)
 
 plotScalarOnSlide(stSlice, log2(totalCounts), title='Total Counts', legendTitle='Log2(counts)',
-                  file=paste0(figures.dir, '/slice-log2-total-counts.pdf'))
+                  file=paste0(figures.dir, '/slice-log2-total-counts.jpg'))
 
 plotScatter(cellNumbers[, 'Epithelial'], log2(totalCounts), xlab='# epithelial cells', ylab='# reads [log2]', fit='lqs',
             col=transparentRGB(stSlice$regionColorsVector, 85),
