@@ -260,7 +260,7 @@ plotGenes <- function(slice, genes, norm='dca', fileBase=genes[1], plotRegions=T
   }
       
  plotScalarOnSlide(slice, x, title=fileBase, legendTitle='Expression',
-                   file=paste0(figures.dir, '/slice-', fileBase, '-', norm, '.pdf'))
+                   file=paste0(figures.dir, '/slice-', fileBase, '-', norm, '.jpg'))
 
  if (plotRegions)
     regionBoxplot(x, slice, ylab="Expression", main=fileBase,
