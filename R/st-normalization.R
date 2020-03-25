@@ -1,13 +1,13 @@
 
 
 # attemps to generate root Folder from working directory, supposing you downloaded the three main folders as given.
-# will not work if WD =/= folder with this script. In that case, replace base.dir with root folder containing the three 
+# will not work if WD =/= folder with this script. In that case, replace base.dir with root folder containing the three
 # main folders (i.e. input, output and R)
 
-# base.dir <- gsub("/R","",getwd()) 
+# base.dir <- gsub("/R","",getwd())
 # setwd("../")
 
-base.dir <- '.' 
+base.dir <- '.'
 code.dir <- paste0(base.dir, "/R")
 input.dir <- paste0(base.dir, "/input")
 output.dir <- paste0(base.dir, "/output")
@@ -63,7 +63,11 @@ plotScalarOnSlide(stSlice, log2(totalCounts), title='Total Counts', legendTitle=
 
 plotScatter(cellNumbers[, 'Epithelial'], log2(totalCounts), xlab='# epithelial cells', ylab='# reads [log2]', fit='lqs',
             col=transparentRGB(stSlice$regionColorsVector, 85),
-            cor.x=0.7, cor.y=0.2, file=paste0(figures.dir, '/scatter-number-epithelial-cells-vs-number-reads.pdf')) 
+            cor.x=0.7, cor.y=0.2, file=paste0(figures.dir, '/scatter-number-epithelial-cells-vs-number-reads.pdf'))
+
+plotScatter(cellNumbers[, 'Total'], log2(totalCounts), xlab='# cells', ylab='# reads [log2]', fit='lqs',
+            col=transparentRGB(stSlice$regionColorsVector, 85),
+            cor.x=0.7, cor.y=0.2, file=paste0(figures.dir, '/scatter-number-cells-vs-number-reads.pdf'))
 
 
 fit <- lm(log2(totalCounts) ~ cellNumbers[, 'Epithelial'] + cellNumbers[, 'Fibroblasts'] + cellNumbers[, 'Others'])
@@ -71,14 +75,16 @@ summary(fit)
 summary(fit)$coef
 
 
-##Counts adjustment
-totalCountsLog2 <- log2(totalCounts)
-stSlice$adjCounts <- t(apply(stSlice$rawCounts, 1, function(z) {
-  lqs(z ~ totalCountsLog2)$residuals + mean(z)}))
+##Counts normalization
+x <- (2**stSlice$rawCounts)-1
+stSlice$adjCounts <- t(apply(x, 1, function(z) {
+  z/totalCounts}))
+stSlice$adjCounts <- log2(stSlice$adjCounts+1)
 rownames(stSlice$adjCounts) <- rownames(stSlice$rawCounts)
 
 
-##TG and VIM 
+
+##TG and VIM
 plotGenes(stSlice, 'TG', norm='rawCounts')
 plotGenes(stSlice, 'TG', norm='adjCounts')
 plotGenes(stSlice, 'TG', norm='dca')
@@ -133,6 +139,68 @@ pdf(paste0(figures.dir, '/density-gene-gene-correlation.pdf'))
 par(mar=c(6.1, 6.5, 4.1, 1.1))
 plotDensities(d, xlab='Gene-gene correlation', main='', legend.pos='topleft')
 dev.off()
+
+
+##Scatter plot for Supp. Fig. 1
+q <- quantile(stSlice$adjCounts['TG',], 0.95)
+stSlice$adjCounts['TG', stSlice$adjCounts['TG',]>q] <- q
+
+plotGenes(stSlice, 'TG', norm='adjCounts')
+
+plotScatter(stSlice$rawCounts['TG',], log2(totalCounts),
+            xlab='TG raw counts [log2]', cor.x=0.75, cor.y=0.25,
+            ylab='Total counts [log2]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-TG-raw-counts-vs-total-counts.pdf'))
+plotScatter(stSlice$adjCounts['TG',], log2(totalCounts),
+            xlab='TG norm. counts [log2]', cor.x=0.75, cor.y=0.25,
+            ylab='Total counts [log2]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-TG-normalized-counts-vs-total-counts.pdf'))
+plotScatter(stSlice$dca['TG',], log2(totalCounts),
+            xlab='TG DCA [log2]', cor.x=0.75, cor.y=0.25,
+            ylab='Total counts [log2]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-TG-dca-vs-total-counts.pdf'))
+
+plotScatter(stSlice$rawCounts['TG',], log10(cellNumbers[,'Epithelial']+1),
+            xlab='TG raw counts [log2]', cor.x=0.75, cor.y=0.25,
+            ylab='Epith. cell per spot [log10]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-TG-raw-counts-vs-epith-cell-density.pdf'))
+plotScatter(stSlice$adjCounts['TG',], log10(cellNumbers[,'Epithelial']+1),
+            xlab='TG norm. counts [log2]', cor.x=0.75, cor.y=0.25,
+            ylab='Epith. cell per spot [log10]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-TG-normalized-counts-vs-epith-cell-density.pdf'))
+plotScatter(stSlice$dca['TG',], log10(cellNumbers[,'Epithelial']+1),
+            xlab='TG DCA [log2]', cor.x=0.75, cor.y=0.25,
+            ylab='Epith. cell per spot [log10]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-TG-dca-vs-epith-cell-density.pdf'))
+
+q <- quantile(stSlice$adjCounts['VIM',], 0.95)
+stSlice$adjCounts['VIM', stSlice$adjCounts['VIM',]>q] <- q
+
+plotScatter(stSlice$rawCounts['VIM',], log2(totalCounts),
+            xlab='VIM raw counts [log2]', cor.x=0.75, cor.y=0.25,
+            ylab='Total counts [log2]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-VIM-raw-counts-vs-total-counts.pdf'))
+plotScatter(stSlice$adjCounts['VIM',], log2(totalCounts),
+            xlab='VIM norm. counts [log2]', cor.x=0.70, cor.y=0.25,
+            ylab='Total counts [log2]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-VIM-normalized-counts-vs-total-counts.pdf'))
+plotScatter(stSlice$dca['VIM',], log2(totalCounts),
+            xlab='VIM DCA [log2]', cor.x=0.75, cor.y=0.25,
+            ylab='Total counts [log2]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-VIM-dca-vs-total-counts.pdf'))
+
+plotScatter(stSlice$rawCounts['VIM',], log10(cellNumbers[,'Epithelial']+1),
+            xlab='VIM raw counts [log2]', cor.x=0.75, cor.y=0.25,
+            ylab='Epith. cell per spot [log10]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-VIM-raw-counts-vs-epith-cell-density.pdf'))
+plotScatter(stSlice$adjCounts['VIM',], log10(cellNumbers[,'Epithelial']+1),
+            xlab='VIM norm. counts [log2]', cor.x=0.70, cor.y=0.25,
+            ylab='Epith. cell per spot [log10]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-VIM-normalized-counts-vs-epith-cell-density.pdf'))
+plotScatter(stSlice$dca['VIM',], log10(cellNumbers[,'Epithelial']+1),
+            xlab='VIM DCA [log2]', cor.x=0.75, cor.y=0.25,
+            ylab='Epith. cell per spot [log10]', fit='lqs', col=transparentRGB(stSlice$regionColorsVector, 85),
+            file=paste0(figures.dir, '/scatter-VIM-dca-vs-epith-cell-density.pdf'))
 
 
 ##Quit
